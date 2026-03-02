@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from config import settings
-from routers import family, health, school, reminders, metrics
+from routers import family, health, school, reminders, metrics, chat
 
 
 @asynccontextmanager
@@ -65,6 +65,7 @@ app.include_router(health.router)
 app.include_router(school.router)
 app.include_router(reminders.router)
 app.include_router(metrics.router)
+app.include_router(chat.router)
 
 
 # ── Health check ─────────────────────────────────────────────

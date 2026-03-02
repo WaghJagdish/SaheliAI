@@ -12,117 +12,85 @@ function MedicineCard({ medicine, onTaken, onSkip }: {
 }) {
     const pillPct = medicine.total_pills ? (medicine.pills_remaining / medicine.total_pills) * 100 : 100
     const lowStock = medicine.pills_remaining <= 7
+
     return (
-        <div className="card" style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '14px' }}>
-                <div style={{ width: '44px', height: '44px', background: 'rgba(99,102,241,0.15)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}> </div>
+        <div className="card" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+                <div style={{
+                    width: 44, height: 44, background: lowStock ? '#fceef3' : '#f0eaf8',
+                    borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 20, flexShrink: 0,
+                }}>💊</div>
                 <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, color: '#1c1917', marginBottom: '2px' }}>{medicine.name}</div>
-                    <div style={{ fontSize: '12px', color: '#78716c' }}>{medicine.dosage} · {medicine.frequency}</div>
+                    <div style={{ fontWeight: 700, color: '#1a1118', marginBottom: 2 }}>{medicine.name}</div>
+                    <div style={{ fontSize: 12, color: '#8b7d97' }}>{medicine.dosage} · {medicine.frequency}</div>
                 </div>
-                {lowStock && <span className="badge badge-amber">Refill Soon</span>}
-                {medicine.refill_needed && <span className="badge badge-red">Refill Now</span>}
+                {lowStock && <span className="pill pill-rose" style={{ flexShrink: 0 }}>Low</span>}
+                {medicine.refill_needed && <span className="pill pill-amber" style={{ flexShrink: 0 }}>Refill!</span>}
             </div>
 
-            <div style={{ marginBottom: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                    <span style={{ fontSize: '12px', color: '#78716c' }}>Pills remaining</span>
-                    <span style={{ fontSize: '12px', color: lowStock ? '#f59e0b' : '#10b981', fontWeight: 600 }}>
+            {/* Stock progress */}
+            <div style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontSize: 11, color: '#8b7d97' }}>Pills remaining</span>
+                    <span style={{ fontSize: 12, color: lowStock ? '#c8456c' : '#0d7c6e', fontWeight: 700 }}>
                         {medicine.pills_remaining} / {medicine.total_pills}
                     </span>
                 </div>
-                <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${pillPct}%`, background: lowStock ? 'linear-gradient(90deg,#f59e0b,#ef4444)' : 'linear-gradient(90deg,#6366f1,#10b981)' }} />
+                <div className="progress-track">
+                    <div className="progress-fill" style={{
+                        width: `${pillPct}%`,
+                        background: lowStock ? 'linear-gradient(90deg, #c8456c, #e8729a)' : 'linear-gradient(90deg, #5b2d8e, #0d7c6e)',
+                    }} />
                 </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
                 <span className="tag">👤 {medicine.prescribed_for}</span>
                 {medicine.schedule_times?.map(t => <span key={t} className="tag">⏰ {t}</span>)}
             </div>
 
-            {medicine.today_status && medicine.today_status.length > 0 && (
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                    {medicine.today_status.map((s, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ fontSize: '12px', color: '#78716c' }}>{s.time}</span>
-                            <span className={`badge badge-${s.status === 'taken' ? 'green' : s.status === 'skipped' ? 'amber' : 'blue'}`}>
-                                {s.status}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            )}
-
             {medicine.today_status?.some(s => s.status === 'pending') && (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn-primary" style={{ fontSize: '12px', padding: '8px 14px' }} onClick={() => onTaken(medicine.id)}>Mark Taken</button>
-                    <button className="btn-secondary" style={{ fontSize: '12px', padding: '8px 14px' }} onClick={() => onSkip(medicine.id)}>Skip</button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => onTaken(medicine.id)}>
+                        ✓ Mark Taken
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => onSkip(medicine.id)}>Skip</button>
                 </div>
             )}
         </div>
     )
 }
 
-function UploadZone({ onUpload }: { onUpload: (file: File, for_: string) => void }) {
+function UploadCTA({ onUpload }: { onUpload: (file: File, for_: string) => void }) {
     const [dragging, setDragging] = useState(false)
     const [prescribedFor, setPrescribedFor] = useState('')
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const ref = useRef<HTMLInputElement>(null)
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault(); setDragging(false)
-        const file = e.dataTransfer.files[0]
-        if (file) { setSelectedFile(file) }
-    }
 
     return (
         <div>
             <div className={`upload-zone ${dragging ? 'drag-over' : ''}`}
                 onDragOver={e => { e.preventDefault(); setDragging(true) }}
                 onDragLeave={() => setDragging(false)}
-                onDrop={handleDrop}
+                onDrop={e => { e.preventDefault(); setDragging(false); setSelectedFile(e.dataTransfer.files[0] || null) }}
                 onClick={() => ref.current?.click()}>
                 <input ref={ref} type="file" accept="image/*,.pdf" hidden onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>📄</div>
-                <div style={{ fontWeight: 700, color: '#1c1917', marginBottom: '6px' }}>Drop prescription image here</div>
-                <div style={{ fontSize: '13px', color: '#78716c' }}>or click to browse · JPG, PNG, PDF accepted</div>
-                {selectedFile && (
-                    <div className="badge badge-green" style={{ marginTop: '12px', display: 'inline-flex' }}>
-                        {selectedFile.name}
-                    </div>
-                )}
+                <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
+                <div style={{ fontWeight: 700, color: '#1a1118', marginBottom: 4 }}>Upload Prescription</div>
+                <div style={{ fontSize: 12, color: '#8b7d97' }}>Tap to take photo or browse files</div>
+                {selectedFile && <span className="pill pill-teal" style={{ marginTop: 10 }}>{selectedFile.name}</span>}
             </div>
+
             {selectedFile && (
-                <div style={{ marginTop: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <input className="input-field" placeholder="Prescribed for (e.g. Mother)" value={prescribedFor} onChange={e => setPrescribedFor(e.target.value)} style={{ flex: 1 }} />
-                    <button className="btn-primary" style={{ whiteSpace: 'nowrap', padding: '10px 20px' }} onClick={() => onUpload(selectedFile, prescribedFor)}>
-                        Process OCR
+                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <input className="input-field" placeholder="Prescribed for (e.g. Mother)" value={prescribedFor}
+                        onChange={e => setPrescribedFor(e.target.value)} />
+                    <button className="btn btn-primary btn-full" onClick={() => onUpload(selectedFile, prescribedFor)}>
+                        Process with OCR
                     </button>
                 </div>
             )}
-        </div>
-    )
-}
-
-function OCRResult({ result }: { result: any }) {
-    if (!result) return null
-    return (
-        <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '12px', padding: '20px', marginTop: '16px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#10b981', marginBottom: '12px' }}>
-                Prescription Processed · +{result.cognitive_minutes_saved} min saved
-            </div>
-            {result.extracted_data?.doctor_name && (
-                <div style={{ fontSize: '13px', color: '#78716c', marginBottom: '8px' }}>
-                    Doctor: <strong style={{ color: '#44403c' }}>{result.extracted_data.doctor_name}</strong>
-                </div>
-            )}
-            {result.extracted_data?.medicines?.map((m: any, i: number) => (
-                <div key={i} style={{ background: 'rgba(0,0,0,0.03)', borderRadius: '8px', padding: '12px', marginTop: '8px', border: '1px solid rgba(0,0,0,0.04)' }}>
-                    <div style={{ fontWeight: 600, color: '#1c1917', marginBottom: '4px' }}>{m.name} {m.dosage}</div>
-                    <div style={{ fontSize: '12px', color: '#78716c' }}>{m.frequency} · Schedule: {m.schedule_times?.join(', ')}</div>
-                </div>
-            ))}
         </div>
     )
 }
@@ -132,88 +100,103 @@ export default function HealthPage() {
     const { data: rxData } = useSWR<{ prescriptions: Prescription[] }>('/api/health/prescriptions', fetcher)
     const [ocrResult, setOcrResult] = useState<any>(null)
     const [uploading, setUploading] = useState(false)
+    const [showUpload, setShowUpload] = useState(false)
 
     const medicines = medData?.medicines || DEMO_MEDICINES
     const prescriptions = rxData?.prescriptions || DEMO_PRESCRIPTIONS
+    const refillsNeeded = medicines.filter(m => m.refill_needed || m.pills_remaining <= 5)
 
     const handleUpload = async (file: File, for_: string) => {
         setUploading(true)
-        try {
-            const result = await healthApi.uploadPrescription(file, for_)
-            setOcrResult(result)
-            revals()
-        } finally {
-            setUploading(false)
-        }
+        try { const result = await healthApi.uploadPrescription(file, for_); setOcrResult(result); revals() }
+        finally { setUploading(false) }
     }
 
-    const handleTaken = (id: string) => {
-        // Optimistic update — flip status locally first
-        healthApi.markTaken(id).then(() => revals()).catch(() => {
-            // If backend unavailable, just update local demo data visually
-            revals()
-        })
-    }
-    const handleSkip = (id: string) => {
-        healthApi.markSkipped(id).then(() => revals()).catch(() => revals())
-    }
-
-
-    const refillsNeeded = medicines.filter(m => m.refill_needed || m.pills_remaining <= 5)
+    const handleTaken = (id: string) => healthApi.markTaken(id).then(() => revals()).catch(() => revals())
+    const handleSkip = (id: string) => healthApi.markSkipped(id).then(() => revals()).catch(() => revals())
 
     return (
-        <div style={{ padding: '32px', maxWidth: '1100px' }}>
-            <div style={{ marginBottom: '32px' }}>
-                <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1c1917', fontFamily: 'Plus Jakarta Sans', marginBottom: '6px' }}> Health Loop</h1>
-                <p style={{ color: '#78716c', fontSize: '15px' }}>Upload prescriptions. Saheli extracts, schedules, and alerts you automatically.</p>
+        <div className="page-content">
+            <div style={{ marginBottom: 20 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a1118', letterSpacing: '-0.3px', marginBottom: 2 }}>Health</h1>
+                <p style={{ fontSize: 13, color: '#8b7d97' }}>Medicines, prescriptions & refill alerts.</p>
             </div>
 
             {/* Refill alerts */}
             {refillsNeeded.map(m => (
-                <div key={m.id} className="alert-banner alert-urgent" style={{ marginBottom: '10px' }}>
-                    <strong>{m.name}</strong> for {m.prescribed_for} — only {m.pills_remaining} pills remaining. <strong>Refill by {m.end_date}.</strong>
+                <div key={m.id} className="alert-urgent" style={{ marginBottom: 10 }}>
+                    💊 <strong>{m.name}</strong> for {m.prescribed_for} — only {m.pills_remaining} pills left. Refill by {m.end_date}.
                 </div>
             ))}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-                {/* Left: Upload */}
-                <div>
-                    <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1c1917', marginBottom: '16px' }}>Upload Upload Prescription</h2>
+            {/* Upload prescription button */}
+            <button
+                className="btn btn-primary btn-full"
+                style={{ marginBottom: 20 }}
+                onClick={() => setShowUpload(v => !v)}
+            >
+                📷 {showUpload ? 'Cancel' : 'Upload Prescription'}
+            </button>
+
+            {showUpload && (
+                <div className="card" style={{ padding: 16, marginBottom: 20 }}>
                     {uploading ? (
-                        <div style={{ padding: '40px', textAlign: 'center', color: '#78716c' }}>
-                            <div style={{ fontSize: '32px', marginBottom: '12px' }}></div>
-                            <div style={{ fontWeight: 600, color: '#7c3aed' }}>Processing OCR...</div>
-                            <div style={{ fontSize: '13px', marginTop: '8px' }}>Extracting medicine data with AI</div>
+                        <div style={{ textAlign: 'center', padding: '24px 0', color: '#8b7d97' }}>
+                            <div style={{ fontSize: 28, marginBottom: 10 }}>✨</div>
+                            <div style={{ fontWeight: 700, color: '#5b2d8e', marginBottom: 6 }}>Processing OCR...</div>
+                            <div style={{ fontSize: 12 }}>Extracting medicine data with AI</div>
                         </div>
                     ) : (
-                        <UploadZone onUpload={handleUpload} />
+                        <UploadCTA onUpload={handleUpload} />
                     )}
-                    <OCRResult result={ocrResult} />
 
-                    <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1c1917', margin: '28px 0 16px' }}>Copy Prescription History</h2>
-                    {prescriptions.map(rx => (
-                        <div key={rx.id} style={{ display: 'flex', gap: '12px', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '10px', marginBottom: '8px', border: '1px solid rgba(0,0,0,0.04)' }}>
-                            <span style={{ fontSize: '20px' }}>Copy </span>
-                            <div>
-                                <div style={{ fontWeight: 600, fontSize: '13px', color: '#1c1917' }}>{rx.doctor_name}</div>
-                                <div style={{ fontSize: '12px', color: '#78716c' }}>{rx.prescribed_for} · {rx.medicine_count} medicine(s)</div>
+                    {ocrResult && (
+                        <div style={{ background: '#e8f6f4', border: '1px solid rgba(13,124,110,0.2)', borderRadius: 12, padding: 14, marginTop: 14 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#0d7c6e', marginBottom: 8 }}>
+                                ✓ Processed · +{ocrResult.cognitive_minutes_saved} min saved
                             </div>
-                            <span className="badge badge-green" style={{ marginLeft: 'auto', alignSelf: 'flex-start' }}>Processed</span>
+                            {ocrResult.extracted_data?.medicines?.map((med: any, i: number) => (
+                                <div key={i} style={{ background: 'rgba(0,0,0,0.04)', borderRadius: 8, padding: 10, marginTop: 6 }}>
+                                    <div style={{ fontWeight: 600, color: '#1a1118', marginBottom: 2 }}>{med.name} {med.dosage}</div>
+                                    <div style={{ fontSize: 12, color: '#8b7d97' }}>{med.frequency}</div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Active medicines */}
+            <div className="section-header">
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1118' }}>Active Medicines</span>
+                <span className="pill pill-plum">{medicines.length}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {medicines.map(m => (
+                    <MedicineCard key={m.id} medicine={m} onTaken={handleTaken} onSkip={handleSkip} />
+                ))}
+            </div>
+
+            {/* Prescription history */}
+            <div style={{ marginTop: 24 }}>
+                <div className="section-header">
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1118' }}>Prescription History</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {prescriptions.map(rx => (
+                        <div key={rx.id} style={{
+                            display: 'flex', gap: 12, padding: '12px 14px',
+                            background: 'white', borderRadius: 14, border: '1px solid var(--border)',
+                            alignItems: 'center',
+                        }}>
+                            <span style={{ fontSize: 22 }}>📋</span>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1118' }}>{rx.doctor_name}</div>
+                                <div style={{ fontSize: 12, color: '#8b7d97' }}>{rx.prescribed_for} · {rx.medicine_count} medicine(s)</div>
+                            </div>
+                            <span className="pill pill-teal" style={{ fontSize: 10 }}>Done</span>
                         </div>
                     ))}
-                </div>
-
-                {/* Right: Medicines */}
-                <div>
-                    <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1c1917', marginBottom: '16px' }}>
-                        Active Medicines
-                        <span className="badge badge-blue" style={{ marginLeft: '10px' }}>{medicines.length}</span>
-                    </h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        {medicines.map(m => (
-                            <MedicineCard key={m.id} medicine={m} onTaken={handleTaken} onSkip={handleSkip} />
-                        ))}
-                    </div>
                 </div>
             </div>
         </div>

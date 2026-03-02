@@ -20,10 +20,12 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/saheli_ai"
 
     # LLM
-    LLM_PROVIDER: str = "openai"
+    LLM_PROVIDER: str = "groq"  # "groq" | "openai"
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
     ANTHROPIC_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
     # OCR
     OCR_PROVIDER: str = "tesseract"  # tesseract | google_vision

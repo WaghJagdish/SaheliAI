@@ -84,3 +84,10 @@ export const metricsApi = {
     activity: () => api.get('/api/metrics/activity').then((r) => r.data),
     dashboard: () => api.get('/api/metrics/dashboard').then((r) => r.data),
 };
+
+// ── Chat API ─────────────────────────────────────────────────
+
+export const chatApi = {
+    sendMessage: (message: string, history: { role: string; text: string }[]) =>
+        api.post('/api/chat', { message, history }).then((r) => r.data as { reply: string; minutes_saved: number }),
+};

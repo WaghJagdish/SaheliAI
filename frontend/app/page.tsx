@@ -2,10 +2,11 @@
 import useSWR from 'swr'
 import { fetcher } from '@/lib/api'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import type { DashboardMetrics, Reminder, ActivityLog } from '@/lib/types'
-import { DEMO_DASHBOARD, DEMO_REMINDERS, DEMO_ACTIVITY, isFamilyMember } from '@/lib/demoData'
+import { DEMO_DASHBOARD, DEMO_REMINDERS, DEMO_ACTIVITY } from '@/lib/demoData'
 
-/* ─── Animated number counter ────────────────────────────── */
+/* ─── Animated number ─── */
 function AnimatedNumber({ value, duration = 1800 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(0)
   useEffect(() => {
@@ -22,234 +23,199 @@ function AnimatedNumber({ value, duration = 1800 }: { value: number; duration?: 
   return <>{display.toLocaleString('en-IN')}</>
 }
 
-/* ─── Colour dot for reminder type ──────────────────────── */
 const TYPE_COLOR: Record<string, string> = {
-  birthday: '#c8456c',
-  medicine: '#5b2d8e',
-  school_event: '#0d7c6e',
-  refill: '#b45309',
+  birthday: '#c8456c', medicine: '#5b2d8e', school_event: '#0d7c6e', refill: '#b45309',
 }
 const TYPE_LABEL: Record<string, string> = {
   birthday: 'Birthday', medicine: 'Medicine', school_event: 'School', refill: 'Refill',
 }
-
-/* ─── AI Agent label ────────────────────────────────────── */
 const AGENT_LABEL: Record<string, string> = {
-  health: 'Health Agent', relationship: 'Relationship Agent', school: 'School Agent',
-}
-const AGENT_ACTION_LABEL: Record<string, string> = {
-  prescription_ocr_processed: 'Prescription OCR',
-  gift_suggestion_generated: 'Gift Suggestion',
-  circular_parsed: 'Circular Parsed',
-  whatsapp_draft_generated: 'Message Drafted',
-  refill_alert_sent: 'Refill Alert',
+  health: 'Health', relationship: 'Relationship', school: 'School',
 }
 
-/* ─── Dashboard ─────────────────────────────────────────── */
 export default function Dashboard() {
   const { data: metrics } = useSWR<DashboardMetrics>('/api/metrics/dashboard', fetcher, { refreshInterval: 30000 })
   const { data: remindersData } = useSWR<{ reminders: Reminder[] }>('/api/reminders', fetcher, { refreshInterval: 15000 })
   const { data: activityData } = useSWR<{ activities: ActivityLog[] }>('/api/metrics/activity', fetcher)
+  const router = useRouter()
 
   const reminders = remindersData?.reminders || DEMO_REMINDERS
   const activities = activityData?.activities || DEMO_ACTIVITY
   const m = metrics || DEMO_DASHBOARD
   const totalMinutes = m.cognitive?.total_minutes || 247
-
   const urgentCount = reminders.filter(r => r.priority === 'high').length
-  const familyCount = m.family?.total_persons || 4
+
+  const statCards = [
+    { label: 'Family', value: m.family?.total_persons || 4, note: '2 birthdays soon', color: '#5b2d8e', pill: 'pill-plum' },
+    { label: 'Medicines', value: m.health?.active_medicines || 3, note: '1 refill needed', color: '#c8456c', pill: 'pill-rose' },
+    { label: 'School', value: m.school?.active_events || 2, note: '₹250 pending', color: '#0d7c6e', pill: 'pill-teal' },
+    { label: 'Reminders', value: m.reminders?.total_pending || 4, note: `${urgentCount} urgent`, color: '#b45309', pill: 'pill-amber' },
+  ]
 
   return (
-    <div style={{ padding: '36px 40px', maxWidth: '1100px' }}>
+    <div className="page-content">
 
-      {/* ── Page header ──────────────────────────────── */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#1a1118', letterSpacing: '-0.3px', marginBottom: '4px' }}>
-          Good evening, Priya
+      {/* ── Greeting ── */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a1118', letterSpacing: '-0.3px', marginBottom: 2 }}>
+          Good morning, Priya 👋
         </h1>
-        <p style={{ fontSize: '14px', color: '#8b7d97' }}>
-          Here is what Saheli managed for you today.
-        </p>
+        <p style={{ fontSize: 13, color: '#8b7d97' }}>Here's what Saheli managed for you today.</p>
       </div>
 
-      {/* ── Cognitive hero banner ─────────────────────── */}
+      {/* ── Cognitive Hero Card ── */}
       <div style={{
-        background: 'linear-gradient(130deg, #5b2d8e 0%, #7b4ab5 60%, #c8456c 100%)',
-        borderRadius: '20px',
-        padding: '32px 36px',
-        marginBottom: '28px',
+        background: 'linear-gradient(130deg, #5b2d8e 0%, #7b4ab5 55%, #c8456c 100%)',
+        borderRadius: 22,
+        padding: '22px 20px',
+        marginBottom: 20,
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Subtle texture rings */}
-        <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '260px', height: '260px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '180px', height: '180px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '50%', pointerEvents: 'none' }} />
+        {/* decorative rings */}
+        <div style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: -20, right: -20, width: 110, height: 110, border: '1px solid rgba(255,255,255,0.08)', borderRadius: '50%', pointerEvents: 'none' }} />
 
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
-          <div>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: '10px' }}>
-              Cognitive Load Reduced
-            </p>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '64px', fontWeight: 800, color: 'white', lineHeight: 1, letterSpacing: '-2px' }}>
-                <AnimatedNumber value={totalMinutes} />
-              </span>
-              <span style={{ fontSize: '18px', color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>min saved</span>
-            </div>
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
-              {(totalMinutes / 60).toFixed(1)} hours returned to you this month
-            </p>
-          </div>
+        <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 6 }}>
+          Cognitive Load Reduced
+        </p>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: 52, fontWeight: 800, color: 'white', lineHeight: 1, letterSpacing: '-2px' }}>
+            <AnimatedNumber value={totalMinutes} />
+          </span>
+          <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>min saved</span>
+        </div>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 16 }}>
+          {(totalMinutes / 60).toFixed(1)} hours returned to you this month
+        </p>
 
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            {[
-              { label: 'Reminders sent', value: m.reminders?.total_pending || 34 },
-              { label: 'Tasks completed', value: m.school?.circulars_processed || 18 },
-              { label: 'Messages drafted', value: m.cognitive?.messages_drafted || 9 },
-            ].map(s => (
-              <div key={s.label} style={{
-                background: 'rgba(255,255,255,0.12)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: '14px',
-                padding: '16px 20px',
-                minWidth: '100px',
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: '28px', fontWeight: 800, color: 'white', lineHeight: 1, marginBottom: '6px' }}>
-                  <AnimatedNumber value={s.value} duration={1400} />
-                </div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{s.label}</div>
+        {/* Mini stats row */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          {[
+            { label: 'Reminders', value: m.reminders?.total_pending || 34 },
+            { label: 'Tasks done', value: m.school?.circulars_processed || 18 },
+            { label: 'Drafted', value: m.cognitive?.messages_drafted || 9 },
+          ].map(s => (
+            <div key={s.label} style={{
+              flex: 1, background: 'rgba(255,255,255,0.14)', borderRadius: 12,
+              padding: '10px 8px', textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: 'white', lineHeight: 1 }}>
+                <AnimatedNumber value={s.value} duration={1400} />
               </div>
-            ))}
-          </div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{s.label}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ── Stat row ─────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '14px', marginBottom: '28px' }}>
-        {[
-          { label: 'Family members', value: familyCount, note: '2 birthdays this month', color: '#5b2d8e', palePill: 'pill-plum' },
-          { label: 'Active medicines', value: m.health?.active_medicines || 3, note: '1 refill needed', color: '#c8456c', palePill: 'pill-rose' },
-          { label: 'School events', value: m.school?.active_events || 2, note: '₹250 pending', color: '#0d7c6e', palePill: 'pill-teal' },
-          { label: 'Pending reminders', value: m.reminders?.total_pending || 4, note: `${urgentCount} urgent`, color: '#b45309', palePill: 'pill-amber' },
-        ].map(s => (
+      {/* ── Stat cards — horizontal scroll ── */}
+      <div className="section-header">
+        <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1118' }}>Overview</span>
+      </div>
+      <div className="scroll-row" style={{ marginBottom: 20 }}>
+        {statCards.map(s => (
           <div key={s.label} className="stat-card">
-            <div style={{ fontSize: '32px', fontWeight: 800, color: s.color, letterSpacing: '-1px', lineHeight: 1, marginBottom: '6px' }}>
-              {s.value}
-            </div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1118', marginBottom: '4px' }}>{s.label}</div>
-            <span className={`pill ${s.palePill}`} style={{ fontSize: '11px' }}>{s.note}</span>
+            <div style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1118', marginBottom: 6 }}>{s.label}</div>
+            <span className={`pill ${s.pill}`} style={{ fontSize: 10 }}>{s.note}</span>
           </div>
         ))}
       </div>
 
-      {/* ── Two columns ──────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-
-        {/* Reminders */}
-        <div className="card" style={{ padding: '22px' }}>
-          <div className="section-header">
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#1a1118' }}>Today's Reminders</span>
-            {urgentCount > 0 && <span className="pill pill-rose">{urgentCount} urgent</span>}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-            {reminders.map((r, idx) => (
-              <div key={r.id} style={{
-                display: 'flex', gap: '12px', alignItems: 'flex-start',
-                padding: '12px 0',
-                borderTop: idx === 0 ? 'none' : '1px solid #f0eaf3',
-              }}>
-                <div style={{ width: '3px', borderRadius: '2px', alignSelf: 'stretch', background: TYPE_COLOR[r.type] || '#5b2d8e', flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1118', marginBottom: '2px', lineHeight: 1.4 }}>{r.title}</div>
-                  <div style={{ fontSize: '12px', color: '#8b7d97', lineHeight: 1.4 }}>{r.body}</div>
-                </div>
-                <span style={{ fontSize: '10px', fontWeight: 600, color: TYPE_COLOR[r.type] || '#5b2d8e', background: 'transparent', whiteSpace: 'nowrap', flexShrink: 0, paddingTop: '2px' }}>
-                  {TYPE_LABEL[r.type]}
-                </span>
-              </div>
-            ))}
-          </div>
+      {/* ── Today's Reminders ── */}
+      <div className="card" style={{ padding: '16px', marginBottom: 16 }}>
+        <div className="section-header">
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1118' }}>Today's Reminders</span>
+          {urgentCount > 0 && <span className="pill pill-rose">{urgentCount} urgent</span>}
         </div>
-
-        {/* AI Activity log */}
-        <div className="card" style={{ padding: '22px' }}>
-          <div className="section-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#1a1118' }}>AI Actions</span>
-              <span className="ai-badge">Saheli AI</span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {activities.slice(0, 5).map((a, i) => (
-              <div key={i} style={{
-                display: 'flex', gap: '12px', alignItems: 'flex-start',
-                padding: '11px 0',
-                borderTop: i === 0 ? 'none' : '1px solid #f0eaf3',
-              }}>
-                {/* Agent dot */}
-                <div style={{
-                  width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
-                  background: a.agent === 'health' ? '#f0eaf8' : a.agent === 'relationship' ? '#fceef3' : '#e8f6f4',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '11px', fontWeight: 700,
-                  color: a.agent === 'health' ? '#5b2d8e' : a.agent === 'relationship' ? '#c8456c' : '#0d7c6e',
-                }}>
-                  {a.agent === 'health' ? 'H' : a.agent === 'relationship' ? 'R' : 'S'}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#8b7d97' }}>
-                      {AGENT_LABEL[a.agent] || a.agent}
-                    </span>
-                    <span style={{ fontSize: '10px', color: '#b8aac4' }}>·</span>
-                    <span style={{ fontSize: '11px', color: '#b8aac4' }}>
-                      {AGENT_ACTION_LABEL[a.action] || a.action}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#4a3d56', lineHeight: 1.4 }}>{a.summary}</div>
-                  <div style={{ marginTop: '4px' }}>
-                    <span className="pill pill-teal" style={{ fontSize: '10px', padding: '2px 7px' }}>+{a.minutes_saved} min saved</span>
-                  </div>
-                </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {reminders.map((r, idx) => (
+            <div key={r.id} style={{
+              display: 'flex', gap: 12, alignItems: 'flex-start',
+              padding: '11px 0',
+              borderTop: idx === 0 ? 'none' : '1px solid #f0eaf3',
+            }}>
+              <div style={{ width: 3, borderRadius: 2, alignSelf: 'stretch', background: TYPE_COLOR[r.type] || '#5b2d8e', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1118', marginBottom: 2, lineHeight: 1.4 }}>{r.title}</div>
+                <div style={{ fontSize: 12, color: '#8b7d97', lineHeight: 1.4 }}>{r.body}</div>
               </div>
-            ))}
-          </div>
+              <span style={{ fontSize: 10, fontWeight: 700, color: TYPE_COLOR[r.type] || '#5b2d8e', whiteSpace: 'nowrap', flexShrink: 0, paddingTop: 2 }}>
+                {TYPE_LABEL[r.type]}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ── AI Feature explainer strip ───────────────── */}
-      <div style={{
-        marginTop: '24px',
-        background: '#f0eaf8',
-        border: '1px solid rgba(91,45,142,0.15)',
-        borderRadius: '14px',
-        padding: '18px 22px',
-        display: 'flex',
-        gap: '32px',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-      }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#5b2d8e', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>
-            How Saheli AI helps you
-          </div>
-          <div style={{ fontSize: '13px', color: '#4a3d56' }}>
-            Three specialist agents run continuously — Health, Relationship, and School — each trained on your family's context.
+      {/* ── AI Activity log ── */}
+      <div className="card" style={{ padding: '16px', marginBottom: 16 }}>
+        <div className="section-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1118' }}>AI Actions</span>
+            <span className="ai-badge">Saheli AI</span>
           </div>
         </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {activities.slice(0, 4).map((a, i) => (
+            <div key={i} style={{
+              display: 'flex', gap: 10, alignItems: 'flex-start',
+              padding: '10px 0', borderTop: i === 0 ? 'none' : '1px solid #f0eaf3',
+            }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                background: a.agent === 'health' ? '#f0eaf8' : a.agent === 'relationship' ? '#fceef3' : '#e8f6f4',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 700,
+                color: a.agent === 'health' ? '#5b2d8e' : a.agent === 'relationship' ? '#c8456c' : '#0d7c6e',
+              }}>
+                {a.agent === 'health' ? 'H' : a.agent === 'relationship' ? 'R' : 'S'}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#8b7d97', marginBottom: 2 }}>
+                  {AGENT_LABEL[a.agent] || a.agent} Agent
+                </div>
+                <div style={{ fontSize: 12, color: '#4a3d56', lineHeight: 1.4 }}>{a.summary}</div>
+                <div style={{ marginTop: 4 }}>
+                  <span className="pill pill-teal" style={{ fontSize: 10, padding: '2px 7px' }}>+{a.minutes_saved} min</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── How Saheli helps strip ── */}
+      <div style={{
+        background: '#f0eaf8', border: '1px solid rgba(91,45,142,0.15)',
+        borderRadius: 16, padding: '14px 16px', marginBottom: 8,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#5b2d8e', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>
+          How Saheli AI helps you
+        </div>
         {[
-          { name: 'Health Agent', desc: 'Reads prescriptions via OCR · Tracks doses · Alerts on refills' },
-          { name: 'Relationship Agent', desc: 'Surfaces birthdays · Generates gift ideas · Drafts messages' },
+          { name: 'Health Agent', desc: 'Reads prescriptions · Tracks doses · Alerts on refills' },
+          { name: 'Relationship Agent', desc: 'Surfaces birthdays · Gift ideas · Drafts messages' },
           { name: 'School Agent', desc: 'Parses circulars · Tracks fees · Drafts teacher replies' },
         ].map(ag => (
-          <div key={ag.name} style={{ minWidth: '160px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#5b2d8e', marginBottom: '3px' }}>{ag.name}</div>
-            <div style={{ fontSize: '11px', color: '#8b7d97', lineHeight: 1.5 }}>{ag.desc}</div>
+          <div key={ag.name} style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#5b2d8e', marginBottom: 2 }}>{ag.name}</div>
+            <div style={{ fontSize: 11, color: '#8b7d97', lineHeight: 1.5 }}>{ag.desc}</div>
           </div>
         ))}
       </div>
 
+      {/* ── Floating Chat FAB ── */}
+      <button
+        className="fab"
+        onClick={() => router.push('/chat')}
+        aria-label="Ask Saheli AI"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.07L2 22l4.93-1.37A9.95 9.95 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm1 14H7v-2h6v2zm2-4H7v-2h8v2zm0-4H7V6h8v2z" />
+        </svg>
+      </button>
     </div>
   )
 }
