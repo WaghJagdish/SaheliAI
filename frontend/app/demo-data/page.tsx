@@ -193,7 +193,7 @@ export default function DemoDataPage() {
                 </div>
             )}
 
-            <div style={{ marginBottom: '4px', padding: '4px', background: '#fdf8f5', borderRadius: '12px', display: 'inline-flex', gap: '4px', marginBottom: '20px', border: '1px solid rgba(0,0,0,0.07)' }}>
+            <div style={{ padding: '4px', background: '#fdf8f5', borderRadius: '12px', display: 'inline-flex', gap: '4px', marginBottom: '20px', border: '1px solid rgba(0,0,0,0.07)' }}>
                 {tabs.map(t => (
                     <button key={t.id} onClick={() => setTab(t.id)} style={{
                         padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
