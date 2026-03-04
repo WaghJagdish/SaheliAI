@@ -66,22 +66,19 @@ ON CONFLICT (id) DO NOTHING;
 
 -- ── SCHOOL EVENTS ─────────────────────────────────────────────
 
-INSERT INTO school_events (id, child_id, user_id, event_name, event_date, deadline_date, fee_amount, special_instructions, action_required) VALUES
+INSERT INTO school_events (id, child_id, user_id, event_name, event_date, deadline_date, fee_amount, special_instructions) VALUES
     ('50000000-0000-0000-0000-000000000001',
      '40000000-0000-0000-0000-000000000001',
      '00000000-0000-0000-0000-000000000001',
      'Annual Sports Day', '2026-03-15', '2026-03-10', 250,
-     'Send P.E. kit and sports shoes on the day', true),
+     'Send P.E. kit and sports shoes on the day'),
 
     ('50000000-0000-0000-0000-000000000002',
      '40000000-0000-0000-0000-000000000001',
      '00000000-0000-0000-0000-000000000001',
      'Parent-Teacher Meeting', '2026-03-20', '2026-03-18', NULL,
-     'Bring previous term report card', true)
+     'Bring previous term report card')
 ON CONFLICT (id) DO NOTHING;
-
--- Fix: remove action_required column if it doesn't exist in schema
--- (it's stored in special_instructions or as a note)
 
 -- ── COGNITIVE EVENTS ─────────────────────────────────────────
 
