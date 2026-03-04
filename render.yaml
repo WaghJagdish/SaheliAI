@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: saheli-ai-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: DEMO_MODE
+        value: "false"
+      - key: LLM_PROVIDER
+        value: groq
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: OCR_PROVIDER
+        value: tesseract
+      - key: TESSERACT_PATH
+        value: tesseract
+      - key: LOCAL_UPLOAD_PATH
+        value: ./uploads
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      # The following must be set manually in the Render dashboard:
+      # DATABASE_URL   → your Supabase connection string
+      # GROQ_API_KEY   → your Groq API key
+      # ALLOWED_ORIGINS → your Vercel frontend URL (set after deploy)

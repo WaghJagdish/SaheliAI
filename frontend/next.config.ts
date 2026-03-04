@@ -10,7 +10,10 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
-    domains: ['localhost'],
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'https', hostname: '*.onrender.com' },
+    ],
   },
 }
 
