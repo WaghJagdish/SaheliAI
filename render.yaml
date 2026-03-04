@@ -25,6 +25,8 @@ services:
         value: production
       - key: DEBUG
         value: "false"
+      - key: PYTHON_VERSION
+        value: "3.11.10"
       # The following must be set manually in the Render dashboard:
       # DATABASE_URL   → your Supabase connection string
       # GROQ_API_KEY   → your Groq API key
