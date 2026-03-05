@@ -1,10 +1,11 @@
 'use client'
 import useSWR from 'swr'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { fetcher, healthApi } from '@/lib/api'
 import type { Medicine, Prescription } from '@/lib/types'
 import { DEMO_MEDICINES, DEMO_PRESCRIPTIONS } from '@/lib/demoData'
-import { isDemoUser } from '@/lib/userUtils'
+import { isDemoUser, getLoggedInUser } from '@/lib/userUtils'
 
 function MedicineCard({ medicine, onTaken, onSkip, takenLocally, skippedLocally }: {
     medicine: Medicine
@@ -120,8 +121,12 @@ export default function HealthPage() {
     const [isDemo, setIsDemo] = useState(false)
     const [takenIds, setTakenIds] = useState<Set<string>>(new Set())
     const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set())
+    const router = useRouter()
 
-    useEffect(() => { setIsDemo(isDemoUser()) }, [])
+    useEffect(() => {
+        if (!getLoggedInUser()) { router.replace('/login'); return }
+        setIsDemo(isDemoUser())
+    }, [])
 
     const medicines = (medData?.medicines?.length ? medData.medicines : null) ?? (isDemo ? DEMO_MEDICINES : [])
     const prescriptions = (rxData?.prescriptions?.length ? rxData.prescriptions : null) ?? (isDemo ? DEMO_PRESCRIPTIONS : [])

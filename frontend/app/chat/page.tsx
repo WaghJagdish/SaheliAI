@@ -1,6 +1,8 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { chatApi } from '@/lib/api'
+import { getLoggedInUser } from '@/lib/userUtils'
 
 type Message = {
     id: string
@@ -57,6 +59,12 @@ export default function ChatPage() {
     const [sending, setSending] = useState(false)
     const bottomRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLTextAreaElement>(null)
+    const router = useRouter()
+
+    // Auth guard
+    useEffect(() => {
+        if (!getLoggedInUser()) { router.replace('/login') }
+    }, [])
 
     // Scroll to bottom whenever messages change
     useEffect(() => {

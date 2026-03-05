@@ -1,10 +1,11 @@
 'use client'
 import useSWR, { mutate } from 'swr'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { fetcher, familyApi } from '@/lib/api'
 import type { Person, BirthdayEvent, GiftSuggestion } from '@/lib/types'
 import { DEMO_PERSONS, DEMO_BIRTHDAYS } from '@/lib/demoData'
-import { isDemoUser } from '@/lib/userUtils'
+import { isDemoUser, getLoggedInUser } from '@/lib/userUtils'
 
 function PersonCard({ person, onAction }: {
     person: any
@@ -212,8 +213,12 @@ export default function FamilyPage() {
     const [modal, setModal] = useState<{ id: string; name: string } | null>(null)
     const [isDemo, setIsDemo] = useState(false)
     const [localPersons, setLocalPersons] = useState<any[]>([])
+    const router = useRouter()
 
-    useEffect(() => { setIsDemo(isDemoUser()) }, [])
+    useEffect(() => {
+        if (!getLoggedInUser()) { router.replace('/login'); return }
+        setIsDemo(isDemoUser())
+    }, [])
 
     const apiPersons = ((data?.persons?.length ? data.persons : null) ?? (isDemo ? DEMO_PERSONS : [])) as any[]
     const persons = [...apiPersons, ...localPersons]

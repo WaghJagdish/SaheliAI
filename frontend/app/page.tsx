@@ -51,9 +51,13 @@ export default function Dashboard() {
   const [userName, setUserName] = useState('there')
 
   useEffect(() => {
-    setIsDemo(isDemoUser())
     const u = getLoggedInUser()
-    if (u) setUserName(u.name.split(' ')[0])
+    if (!u) {
+      router.replace('/login')
+      return
+    }
+    setIsDemo(isDemoUser())
+    setUserName(u.name.split(' ')[0])
   }, [])
 
   const fallbackDashboard = isDemo ? DEMO_DASHBOARD : EMPTY_DASHBOARD

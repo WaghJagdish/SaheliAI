@@ -1,10 +1,11 @@
 'use client'
 import useSWR from 'swr'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { fetcher, schoolApi } from '@/lib/api'
 import type { SchoolEvent, Child } from '@/lib/types'
 import { DEMO_EVENTS, DEMO_CHILDREN } from '@/lib/demoData'
-import { isDemoUser } from '@/lib/userUtils'
+import { isDemoUser, getLoggedInUser } from '@/lib/userUtils'
 
 function EventCard({ event, onFeePaid, onComplete }: {
     event: SchoolEvent
@@ -139,8 +140,12 @@ export default function SchoolPage() {
     const { data: evData, mutate: revals } = useSWR<{ events: SchoolEvent[] }>('/api/school/events', fetcher)
     const { data: childData } = useSWR<{ children: Child[] }>('/api/school/children', fetcher)
     const [isDemo, setIsDemo] = useState(false)
+    const router = useRouter()
 
-    useEffect(() => { setIsDemo(isDemoUser()) }, [])
+    useEffect(() => {
+        if (!getLoggedInUser()) { router.replace('/login'); return }
+        setIsDemo(isDemoUser())
+    }, [])
 
     const events = ((evData?.events?.length ? evData.events : null) ?? (isDemo ? DEMO_EVENTS : []))
     const children = ((childData?.children?.length ? childData.children : null) ?? (isDemo ? DEMO_CHILDREN : []))
