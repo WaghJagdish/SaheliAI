@@ -1,9 +1,10 @@
 'use client'
 import useSWR, { mutate } from 'swr'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { fetcher, familyApi } from '@/lib/api'
 import type { Person, BirthdayEvent, GiftSuggestion } from '@/lib/types'
 import { DEMO_PERSONS, DEMO_BIRTHDAYS } from '@/lib/demoData'
+import { isDemoUser } from '@/lib/userUtils'
 
 function PersonCard({ person, onAction }: {
     person: any
@@ -128,15 +129,36 @@ function GiftSheet({ personId, personName, onClose }: { personId: string; person
     )
 }
 
-function AddPersonSheet({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function AddPersonSheet({ onClose, onSuccess }: { onClose: () => void; onSuccess: (localPerson?: any) => void }) {
     const [form, setForm] = useState({ name: '', relation: '', birthday: '', gift_budget: '3000', phone: '' })
     const [loading, setLoading] = useState(false)
+    const [err, setErr] = useState('')
     const relations = ['Mother', 'Father', 'Spouse/Partner', 'Sister', 'Brother', 'Friend', 'Colleague', 'Uncle', 'Aunt', 'Grandparent']
 
     const handleSubmit = async () => {
+        if (!form.name.trim() || !form.relation || !form.birthday) {
+            setErr('Please fill in Name, Relation, and Birthday.')
+            return
+        }
         setLoading(true)
-        try { await familyApi.addPerson({ ...form, gift_budget: parseInt(form.gift_budget) || 0 }); onSuccess(); onClose() }
-        finally { setLoading(false) }
+        setErr('')
+        const personData = { ...form, gift_budget: parseInt(form.gift_budget) || 0 }
+        try {
+            await familyApi.addPerson(personData)
+            onSuccess()
+            onClose()
+        } catch {
+            // Backend unavailable — save locally and update UI
+            const localPerson = {
+                id: `local_${Date.now()}`,
+                ...personData,
+                days_until_birthday: 999,
+            }
+            onSuccess(localPerson)
+            onClose()
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -167,6 +189,11 @@ function AddPersonSheet({ onClose, onSuccess }: { onClose: () => void; onSuccess
                         <input className="input-field" type="number" value={form.gift_budget} onChange={e => setForm(p => ({ ...p, gift_budget: e.target.value }))} />
                     </div>
                 </div>
+                {err && (
+                    <div style={{ background: '#fff1f4', border: '1px solid #f9c5d4', borderRadius: 10, padding: '8px 12px', fontSize: 12, color: '#9f1239', marginTop: -4 }}>
+                        {err}
+                    </div>
+                )}
                 <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                     <button className="btn btn-primary" onClick={handleSubmit} disabled={loading} style={{ flex: 1 }}>
                         {loading ? 'Adding...' : '+ Add Person'}
@@ -183,9 +210,14 @@ export default function FamilyPage() {
     const { data: birthdaysData } = useSWR<{ birthdays: BirthdayEvent[] }>('/api/family/birthdays/upcoming', fetcher)
     const [showAdd, setShowAdd] = useState(false)
     const [modal, setModal] = useState<{ id: string; name: string } | null>(null)
+    const [isDemo, setIsDemo] = useState(false)
+    const [localPersons, setLocalPersons] = useState<any[]>([])
 
-    const persons = (data?.persons || DEMO_PERSONS) as any[]
-    const birthdays = birthdaysData?.birthdays || DEMO_BIRTHDAYS
+    useEffect(() => { setIsDemo(isDemoUser()) }, [])
+
+    const apiPersons = ((data?.persons?.length ? data.persons : null) ?? (isDemo ? DEMO_PERSONS : [])) as any[]
+    const persons = [...apiPersons, ...localPersons]
+    const birthdays = (birthdaysData?.birthdays?.length ? birthdaysData.birthdays : null) ?? (isDemo ? DEMO_BIRTHDAYS : [])
 
     return (
         <div className="page-content">
@@ -210,6 +242,16 @@ export default function FamilyPage() {
                 </div>
             ))}
 
+            {/* Empty state for fresh users */}
+            {persons.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#8b7d97' }}>
+                    <div style={{ fontSize: 48, marginBottom: 12 }}>👨‍👩‍👧‍👦</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1118', marginBottom: 6 }}>No family members yet</div>
+                    <div style={{ fontSize: 13, marginBottom: 16 }}>Add your first member to track birthdays and generate gift ideas</div>
+                    <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>+ Add first member</button>
+                </div>
+            )}
+
             {/* Person cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {persons.map((p: any) => (
@@ -217,7 +259,7 @@ export default function FamilyPage() {
                 ))}
             </div>
 
-            {showAdd && <AddPersonSheet onClose={() => setShowAdd(false)} onSuccess={() => revalidate()} />}
+            {showAdd && <AddPersonSheet onClose={() => setShowAdd(false)} onSuccess={(local) => { if (local) setLocalPersons(prev => [...prev, local]); revalidate() }} />}
             {modal && <GiftSheet personId={modal.id} personName={modal.name} onClose={() => setModal(null)} />}
         </div>
     )

@@ -1,17 +1,21 @@
 'use client'
 import useSWR from 'swr'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { fetcher, healthApi } from '@/lib/api'
 import type { Medicine, Prescription } from '@/lib/types'
 import { DEMO_MEDICINES, DEMO_PRESCRIPTIONS } from '@/lib/demoData'
+import { isDemoUser } from '@/lib/userUtils'
 
-function MedicineCard({ medicine, onTaken, onSkip }: {
+function MedicineCard({ medicine, onTaken, onSkip, takenLocally, skippedLocally }: {
     medicine: Medicine
     onTaken: (id: string) => void
     onSkip: (id: string) => void
+    takenLocally: boolean
+    skippedLocally: boolean
 }) {
     const pillPct = medicine.total_pills ? (medicine.pills_remaining / medicine.total_pills) * 100 : 100
     const lowStock = medicine.pills_remaining <= 7
+    const hasPending = !takenLocally && !skippedLocally && medicine.today_status?.some(s => s.status === 'pending')
 
     return (
         <div className="card" style={{ padding: 16 }}>
@@ -50,7 +54,19 @@ function MedicineCard({ medicine, onTaken, onSkip }: {
                 {medicine.schedule_times?.map(t => <span key={t} className="tag">⏰ {t}</span>)}
             </div>
 
-            {medicine.today_status?.some(s => s.status === 'pending') && (
+            {/* Optimistic taken/skipped feedback */}
+            {takenLocally && (
+                <div style={{ background: '#e8f6f4', borderRadius: 10, padding: '8px 12px', fontSize: 13, color: '#0d7c6e', fontWeight: 600 }}>
+                    ✓ Taken today
+                </div>
+            )}
+            {skippedLocally && (
+                <div style={{ background: '#f5f0ed', borderRadius: 10, padding: '8px 12px', fontSize: 13, color: '#8b7d97', fontWeight: 600 }}>
+                    ↷ Skipped today
+                </div>
+            )}
+
+            {hasPending && (
                 <div style={{ display: 'flex', gap: 8 }}>
                     <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => onTaken(medicine.id)}>
                         ✓ Mark Taken
@@ -101,9 +117,14 @@ export default function HealthPage() {
     const [ocrResult, setOcrResult] = useState<any>(null)
     const [uploading, setUploading] = useState(false)
     const [showUpload, setShowUpload] = useState(false)
+    const [isDemo, setIsDemo] = useState(false)
+    const [takenIds, setTakenIds] = useState<Set<string>>(new Set())
+    const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set())
 
-    const medicines = medData?.medicines || DEMO_MEDICINES
-    const prescriptions = rxData?.prescriptions || DEMO_PRESCRIPTIONS
+    useEffect(() => { setIsDemo(isDemoUser()) }, [])
+
+    const medicines = (medData?.medicines?.length ? medData.medicines : null) ?? (isDemo ? DEMO_MEDICINES : [])
+    const prescriptions = (rxData?.prescriptions?.length ? rxData.prescriptions : null) ?? (isDemo ? DEMO_PRESCRIPTIONS : [])
     const refillsNeeded = medicines.filter(m => m.refill_needed || m.pills_remaining <= 5)
 
     const handleUpload = async (file: File, for_: string) => {
@@ -112,8 +133,18 @@ export default function HealthPage() {
         finally { setUploading(false) }
     }
 
-    const handleTaken = (id: string) => healthApi.markTaken(id).then(() => revals()).catch(() => revals())
-    const handleSkip = (id: string) => healthApi.markSkipped(id).then(() => revals()).catch(() => revals())
+    const handleTaken = (id: string) => {
+        // Optimistic update immediately
+        setTakenIds(prev => new Set(prev).add(id))
+        setSkippedIds(prev => { const s = new Set(prev); s.delete(id); return s })
+        healthApi.markTaken(id).catch(() => {/* silent - demo mode */ })
+    }
+    const handleSkip = (id: string) => {
+        // Optimistic update immediately
+        setSkippedIds(prev => new Set(prev).add(id))
+        setTakenIds(prev => { const s = new Set(prev); s.delete(id); return s })
+        healthApi.markSkipped(id).catch(() => {/* silent - demo mode */ })
+    }
 
     return (
         <div className="page-content">
@@ -173,7 +204,14 @@ export default function HealthPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {medicines.map(m => (
-                    <MedicineCard key={m.id} medicine={m} onTaken={handleTaken} onSkip={handleSkip} />
+                    <MedicineCard
+                        key={m.id}
+                        medicine={m}
+                        onTaken={handleTaken}
+                        onSkip={handleSkip}
+                        takenLocally={takenIds.has(m.id)}
+                        skippedLocally={skippedIds.has(m.id)}
+                    />
                 ))}
             </div>
 

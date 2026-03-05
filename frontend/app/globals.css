@@ -93,7 +93,7 @@ body {
 
   /* Mobile layout */
   --app-max-width: 430px;
-  --top-bar-height: 60px;
+  --top-bar-height: 76px;
   --bottom-tab-height: 68px;
   --content-pad: 16px;
 }

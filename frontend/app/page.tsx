@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { DashboardMetrics, Reminder, ActivityLog } from '@/lib/types'
 import { DEMO_DASHBOARD, DEMO_REMINDERS, DEMO_ACTIVITY } from '@/lib/demoData'
+import { isDemoUser, getLoggedInUser } from '@/lib/userUtils'
 
 /* ─── Animated number ─── */
 function AnimatedNumber({ value, duration = 1800 }: { value: number; duration?: number }) {
@@ -33,23 +34,62 @@ const AGENT_LABEL: Record<string, string> = {
   health: 'Health', relationship: 'Relationship', school: 'School',
 }
 
+const EMPTY_DASHBOARD: DashboardMetrics = {
+  cognitive: { total_minutes: 0, reminders_count: 0, tasks_handled: 0, messages_drafted: 0, breakdown: [] },
+  family: { total_persons: 0, upcoming_birthdays_30days: 0, next_birthday_days: 0 },
+  health: { active_medicines: 0, refills_needed: 0, prescriptions_processed: 0 },
+  school: { active_events: 0, fees_pending: 0, circulars_processed: 0 },
+  reminders: { total_pending: 0, high_priority: 0 },
+}
+
 export default function Dashboard() {
   const { data: metrics } = useSWR<DashboardMetrics>('/api/metrics/dashboard', fetcher, { refreshInterval: 30000 })
   const { data: remindersData } = useSWR<{ reminders: Reminder[] }>('/api/reminders', fetcher, { refreshInterval: 15000 })
   const { data: activityData } = useSWR<{ activities: ActivityLog[] }>('/api/metrics/activity', fetcher)
   const router = useRouter()
+  const [isDemo, setIsDemo] = useState(false)
+  const [userName, setUserName] = useState('there')
 
-  const reminders = remindersData?.reminders || DEMO_REMINDERS
-  const activities = activityData?.activities || DEMO_ACTIVITY
-  const m = metrics || DEMO_DASHBOARD
-  const totalMinutes = m.cognitive?.total_minutes || 247
+  useEffect(() => {
+    setIsDemo(isDemoUser())
+    const u = getLoggedInUser()
+    if (u) setUserName(u.name.split(' ')[0])
+  }, [])
+
+  const fallbackDashboard = isDemo ? DEMO_DASHBOARD : EMPTY_DASHBOARD
+  const reminders = (remindersData?.reminders?.length ? remindersData.reminders : null) ?? (isDemo ? DEMO_REMINDERS : [])
+  const activities = (activityData?.activities?.length ? activityData.activities : null) ?? (isDemo ? DEMO_ACTIVITY : [])
+  const rawMetrics = metrics ?? null
+  const m = (rawMetrics && Object.keys(rawMetrics).length ? rawMetrics : null) ?? fallbackDashboard
+  const totalMinutes = m.cognitive?.total_minutes ?? 0
   const urgentCount = reminders.filter(r => r.priority === 'high').length
 
+  const familyCount = m.family?.total_persons ?? 0
+  const medicineCount = m.health?.active_medicines ?? 0
+  const schoolCount = m.school?.active_events ?? 0
+  const reminderCount = m.reminders?.total_pending ?? 0
+
   const statCards = [
-    { label: 'Family', value: m.family?.total_persons || 4, note: '2 birthdays soon', color: '#5b2d8e', pill: 'pill-plum' },
-    { label: 'Medicines', value: m.health?.active_medicines || 3, note: '1 refill needed', color: '#c8456c', pill: 'pill-rose' },
-    { label: 'School', value: m.school?.active_events || 2, note: '₹250 pending', color: '#0d7c6e', pill: 'pill-teal' },
-    { label: 'Reminders', value: m.reminders?.total_pending || 4, note: `${urgentCount} urgent`, color: '#b45309', pill: 'pill-amber' },
+    {
+      label: 'Family', value: familyCount,
+      note: familyCount > 0 ? `${m.family?.upcoming_birthdays_30days ?? 0} birthdays soon` : 'Add members',
+      color: '#5b2d8e', pill: 'pill-plum',
+    },
+    {
+      label: 'Medicines', value: medicineCount,
+      note: medicineCount > 0 ? `${m.health?.refills_needed ?? 0} refill needed` : 'Add medicines',
+      color: '#c8456c', pill: 'pill-rose',
+    },
+    {
+      label: 'School', value: schoolCount,
+      note: schoolCount > 0 ? `${m.school?.fees_pending ?? 0} fee pending` : 'Add events',
+      color: '#0d7c6e', pill: 'pill-teal',
+    },
+    {
+      label: 'Reminders', value: reminderCount,
+      note: `${urgentCount} urgent`,
+      color: '#b45309', pill: 'pill-amber',
+    },
   ]
 
   return (
@@ -58,9 +98,9 @@ export default function Dashboard() {
       {/* ── Greeting ── */}
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a1118', letterSpacing: '-0.3px', marginBottom: 2 }}>
-          Good morning, Priya 👋
+          Good morning, {userName} 👋
         </h1>
-        <p style={{ fontSize: 13, color: '#8b7d97' }}>Here's what Saheli managed for you today.</p>
+        <p style={{ fontSize: 13, color: '#8b7d97' }}>Here's what SaheliAI managed for you today.</p>
       </div>
 
       {/* ── Cognitive Hero Card ── */}
@@ -92,9 +132,9 @@ export default function Dashboard() {
         {/* Mini stats row */}
         <div style={{ display: 'flex', gap: 10 }}>
           {[
-            { label: 'Reminders', value: m.reminders?.total_pending || 34 },
-            { label: 'Tasks done', value: m.school?.circulars_processed || 18 },
-            { label: 'Drafted', value: m.cognitive?.messages_drafted || 9 },
+            { label: 'Reminders', value: m.reminders?.total_pending ?? 0 },
+            { label: 'Tasks done', value: m.school?.circulars_processed ?? 0 },
+            { label: 'Drafted', value: m.cognitive?.messages_drafted ?? 0 },
           ].map(s => (
             <div key={s.label} style={{
               flex: 1, background: 'rgba(255,255,255,0.14)', borderRadius: 12,
@@ -154,7 +194,7 @@ export default function Dashboard() {
         <div className="section-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1118' }}>AI Actions</span>
-            <span className="ai-badge">Saheli AI</span>
+            <span className="ai-badge">SaheliAI</span>
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -192,7 +232,7 @@ export default function Dashboard() {
         borderRadius: 16, padding: '14px 16px', marginBottom: 8,
       }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#5b2d8e', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>
-          How Saheli AI helps you
+          How SaheliAI helps you
         </div>
         {[
           { name: 'Health Agent', desc: 'Reads prescriptions · Tracks doses · Alerts on refills' },

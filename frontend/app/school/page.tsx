@@ -1,9 +1,10 @@
 'use client'
 import useSWR from 'swr'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { fetcher, schoolApi } from '@/lib/api'
 import type { SchoolEvent, Child } from '@/lib/types'
 import { DEMO_EVENTS, DEMO_CHILDREN } from '@/lib/demoData'
+import { isDemoUser } from '@/lib/userUtils'
 
 function EventCard({ event, onFeePaid, onComplete }: {
     event: SchoolEvent
@@ -107,7 +108,7 @@ function CircularUpload({ onUpload, children }: { onUpload: (file: File) => void
                 <input ref={ref} type="file" accept="image/*,.pdf" hidden onChange={e => setFile(e.target.files?.[0] || null)} />
                 <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
                 <div style={{ fontWeight: 700, color: '#1a1118', marginBottom: 4 }}>Upload School Circular</div>
-                <div style={{ fontSize: 12, color: '#8b7d97' }}>Saheli extracts all event details automatically</div>
+                <div style={{ fontSize: 12, color: '#8b7d97' }}>SaheliAI extracts all event details automatically</div>
                 {file && <span className="pill pill-teal" style={{ marginTop: 10 }}>{file.name}</span>}
             </div>
             {file && !ocrResult && (
@@ -137,8 +138,12 @@ function CircularUpload({ onUpload, children }: { onUpload: (file: File) => void
 export default function SchoolPage() {
     const { data: evData, mutate: revals } = useSWR<{ events: SchoolEvent[] }>('/api/school/events', fetcher)
     const { data: childData } = useSWR<{ children: Child[] }>('/api/school/children', fetcher)
-    const events = evData?.events || DEMO_EVENTS
-    const children = childData?.children || DEMO_CHILDREN
+    const [isDemo, setIsDemo] = useState(false)
+
+    useEffect(() => { setIsDemo(isDemoUser()) }, [])
+
+    const events = ((evData?.events?.length ? evData.events : null) ?? (isDemo ? DEMO_EVENTS : []))
+    const children = ((childData?.children?.length ? childData.children : null) ?? (isDemo ? DEMO_CHILDREN : []))
     const [showUpload, setShowUpload] = useState(false)
 
     const handleFeePaid = async (id: string) => { await schoolApi.markFeePaid(id); revals() }

@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -102,7 +103,18 @@ export default function Navigation() {
         <>
             {/* ── Top App Bar ── */}
             <div className="top-bar">
-                <div className="top-bar-wordmark">saheli</div>
+                <div className="top-bar-wordmark" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Image
+                        src="/saheli-logo.png"
+                        alt="SaheliAI Logo"
+                        width={48}
+                        height={48}
+                        style={{ objectFit: 'contain', flexShrink: 0 }}
+                    />
+                    <span style={{ fontWeight: 800, fontSize: 19, letterSpacing: '-0.5px', background: 'linear-gradient(135deg, #5b2d8e, #c8456c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                        SaheliAI
+                    </span>
+                </div>
                 <div className="top-bar-actions">
                     {/* Notification bell */}
                     <button style={{

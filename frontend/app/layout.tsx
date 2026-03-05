@@ -3,9 +3,9 @@ import './globals.css'
 import Navigation from '@/components/Navigation'
 
 export const metadata: Metadata = {
-  title: 'Saheli — Your AI Family Assistant',
+  title: 'SaheliAI — Your AI Family Assistant',
   description: 'The intelligent assistant that manages birthdays, medicines, and school events for Indian families — so you can be present for the moments that matter.',
-  keywords: 'Indian families, cognitive load, birthday reminders, medicine tracking, school events, AI assistant',
+  keywords: 'SaheliAI, Indian families, cognitive load, birthday reminders, medicine tracking, school events, AI assistant',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
 }
 

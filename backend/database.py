@@ -19,7 +19,7 @@ if settings.DEMO_MODE:
     AsyncSessionLocal = None
 
     async def get_db():  # type: ignore[misc]
-        raise RuntimeError("Database is not available in DEMO_MODE.")
+        yield None  # Routes check DEMO_MODE before using the session
 
     async def init_db():
         pass  # No-op in demo mode
